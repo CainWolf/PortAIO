@@ -397,22 +397,17 @@ namespace Staberina
                 KSTarget = null;
             }
 
-            foreach (
-                var enemy in
-                    Enemies.Where(
-                        h =>
-                            h.LSIsValidTarget(E.Range + Q.Range) && !h.IsZombie &&
-                            (KSTarget == null || KSTarget.NetworkId == h.NetworkId)).OrderBy(h => h.Health))
+            foreach (var enemy in EntityManager.Heroes.Enemies.Where(h => h.LSIsValidTarget(E.Range + Q.Range) && !h.IsZombie && (KSTarget == null || KSTarget.NetworkId == h.NetworkId)).OrderBy(h => h.Health))
             {
                 if (E.IsInRange(enemy))
                 {
-                    if (W.IsCastable(enemy, true) && W.Cast())
+                    if (W.IsCastable(enemy, true) && W.Cast() && W.GetDamage(enemy) > enemy.Health)
                     {
                         KSTarget = enemy;
                         return true;
                     }
 
-                    if (Q.IsCastable(enemy, true) && Q.CastOnUnit(enemy))
+                    if (Q.IsCastable(enemy, true) && Q.CastOnUnit(enemy) && Q.GetDamage(enemy) > enemy.Health)
                     {
                         KSTarget = enemy;
                         return true;
@@ -430,7 +425,7 @@ namespace Staberina
                         continue;
                     }
 
-                    if (E.IsCastable(enemy, true) && E.CastOnUnit(enemy))
+                    if (E.IsCastable(enemy, true) && E.CastOnUnit(enemy) && E.GetDamage(enemy) > enemy.Health)
                     {
                         KSTarget = enemy;
                         return true;
