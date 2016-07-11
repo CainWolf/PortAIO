@@ -11,13 +11,13 @@ namespace HoolaRiven
     public class Program
     {
         public static Menu Menu;
-        private static Orbwalking.Orbwalker Orbwalker;
+        private static LSOrbwalker Orbwalker = PortAIO.Init.LSOrbwalker;
         private static readonly EloBuddy.AIHeroClient Player = EloBuddy.ObjectManager.Player;
         private static readonly HpBarIndicator Indicator = new HpBarIndicator();
         private const string IsFirstR = "RivenFengShuiEngine";
         private const string IsSecondR = "RivenIzunaBlade";
         private static readonly EloBuddy.SpellSlot Flash = Player.GetSpellSlot("summonerFlash");
-        private static Spell Q, W, E, R;
+        private static Spell Q, Q1, W, E, R;
         private static int QStack = 1;
         public static Render.Text Timer, Timer2;
         private static bool forceQ;
@@ -65,7 +65,7 @@ namespace HoolaRiven
             if (Items.HasItem(3748) && Items.CanUseItem(3748))
             {
                 Items.UseItem(3748);
-                Orbwalking.LastAATick = 0;
+                LSOrbwalker.LastAATick = 0;
             }
         }
         private static void Drawing_OnEndScene(EventArgs args)
@@ -90,10 +90,9 @@ namespace HoolaRiven
             QTarget = (EloBuddy.Obj_AI_Base)args.Target;
             if (args.Target is EloBuddy.Obj_AI_Minion)
             {
-                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
+                if (Orbwalker.ActiveMode == LSOrbwalker.OrbwalkingMode.LaneClear)
                 {
-                    var Minions = MinionManager.GetMinions(120 + 70 + Player.BoundingRadius, MinionTypes.All,
-                        MinionTeam.Enemy, MinionOrderTypes.Health); 
+                    var Minions = MinionManager.GetMinions(70 + 120 + Player.BoundingRadius);
                     if (HasTitan())
                     {
                         CastTitan();
@@ -109,7 +108,6 @@ namespace HoolaRiven
                     {
                         ForceItem();
                         Utility.DelayAction.Add(1, ForceW);
-                        WReset();
                     }
                     if ((!Q.IsReady() || (Q.IsReady() && !LaneQ)) && (!W.IsReady() || (W.IsReady() && LaneW == 0) || Minions.Count < LaneW) &&
                         E.IsReady() && LaneE)
@@ -129,7 +127,7 @@ namespace HoolaRiven
 
             if (args.Target is EloBuddy.Obj_AI_Minion)
             {
-                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
+                if (Orbwalker.ActiveMode == LSOrbwalker.OrbwalkingMode.LaneClear)
                 {
                     var Mobs = MinionManager.GetMinions(120 + 70 + Player.BoundingRadius, MinionTypes.All,
                         MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
@@ -149,7 +147,6 @@ namespace HoolaRiven
                         {
                             ForceItem();
                             Utility.DelayAction.Add(1, ForceW);
-                            WReset();
                         }
                         else if (E.IsReady())
                         {
@@ -158,13 +155,13 @@ namespace HoolaRiven
                     }
                 }
             }
-            if (args.Target is EloBuddy.Obj_AI_Turret || args.Target is EloBuddy.Obj_Barracks || args.Target is EloBuddy.Obj_BarracksDampener || args.Target is EloBuddy.Obj_Building) if (args.Target.IsValid && args.Target != null && Q.IsReady() && LaneQ && Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear) ForceCastQ((EloBuddy.Obj_AI_Base)args.Target);
+            if (args.Target is EloBuddy.Obj_AI_Turret || args.Target is EloBuddy.Obj_Barracks || args.Target is EloBuddy.Obj_BarracksDampener || args.Target is EloBuddy.Obj_Building) if (args.Target.IsValid && args.Target != null && Q.IsReady() && LaneQ && Orbwalker.ActiveMode == LSOrbwalker.OrbwalkingMode.LaneClear) ForceCastQ((EloBuddy.Obj_AI_Base)args.Target);
             if (args.Target is EloBuddy.AIHeroClient)
             {
                 var target = (EloBuddy.AIHeroClient)args.Target;
                 if (KillstealR && R.IsReady() && R.Instance.Name == IsSecondR) if (target.Health < (Rdame(target, target.Health) + Player.LSGetAutoAttackDamage(target)) && target.Health > Player.LSGetAutoAttackDamage(target)) R.Cast(target.Position);
                 if (KillstealW && W.IsReady()) if (target.Health < (W.GetDamage(target) + Player.LSGetAutoAttackDamage(target)) && target.Health > Player.LSGetAutoAttackDamage(target)) W.Cast();
-                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo && target != null)
+                if (Orbwalker.ActiveMode == LSOrbwalker.OrbwalkingMode.Combo && target != null)
                 {
                     if (HasTitan())
                     {
@@ -180,35 +177,11 @@ namespace HoolaRiven
                     {
                         ForceItem();
                         Utility.DelayAction.Add(1, ForceW);
-                        WReset();
                     }
                     else if (E.IsReady() && !Orbwalking.InAutoAttackRange(target)) E.Cast(target.Position);
                 }
-                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.FastHarass && target != null)
-                {
-                    if (HasTitan())
-                    {
-                        CastTitan();
-                        return;
-                    }
-                    if (W.IsReady() && InWRange(target))
-                    {
-                        ForceItem();
-                        Utility.DelayAction.Add(1, ForceW);
-                        Utility.DelayAction.Add(2, () => ForceCastQ(target));
-                    }
-                    else if (Q.IsReady())
-                    {
-                        ForceItem();
-                        Utility.DelayAction.Add(1, () => ForceCastQ(target));
-                    }
-                    else if (E.IsReady() && !Orbwalking.InAutoAttackRange(target) && !InWRange(target))
-                    {
-                        E.Cast(target.Position);
-                    }
-                }
 
-                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
+                if (Orbwalker.ActiveMode == LSOrbwalker.OrbwalkingMode.Mixed)
                 {
                     if (HasTitan())
                     {
@@ -216,25 +189,6 @@ namespace HoolaRiven
                         return;
                     }
                     if (QStack == 2 && Q.IsReady())
-                    {
-                        ForceItem();
-                        Utility.DelayAction.Add(1, () => ForceCastQ(target));
-                    }
-                }
-
-                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Burst)
-                {
-                    if (HasTitan())
-                    {
-                        CastTitan();
-                        return;
-                    }
-                    if (R.IsReady() && R.Instance.Name == IsSecondR)
-                    {
-                        ForceItem();
-                        Utility.DelayAction.Add(1, ForceR2);
-                    }
-                    else if (Q.IsReady())
                     {
                         ForceItem();
                         Utility.DelayAction.Add(1, () => ForceCastQ(target));
@@ -294,8 +248,6 @@ namespace HoolaRiven
         private static void OnMenuLoad()
         {
             Menu = MainMenu.AddMenu("Hoola Riven", "hoolariven");
-            Menu orbwalker = MainMenu.AddMenu("Orbwalk", "rorb");
-            Orbwalker = new Orbwalking.Orbwalker(orbwalker);
             Combo1 = Menu.AddSubMenu("Combo", "Combo");
             Combo1.Add("AlwaysR", new KeyBind("Always Use R (Toggle)", false, KeyBind.BindTypes.PressToggle, "N".ToCharArray()[0]));
             Combo1.Add("UseHoola", new CheckBox("Use Hoola Combo Logic"));
@@ -351,7 +303,6 @@ namespace HoolaRiven
                 if (Player.LSCountEnemiesInRange(GetWRange) >= AutoW)
                 {
                     ForceW();
-                    WReset();
                 }
             }
         }
@@ -366,12 +317,10 @@ namespace HoolaRiven
             UseRMaxDam();
             AutoUseW();
             Killsteal();
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo) Combo();
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear) Jungleclear();
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed) Harass();
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.FastHarass) FastHarass();
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Burst) Burst();
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Flee) Flee();
+            if (Orbwalker.ActiveMode == LSOrbwalker.OrbwalkingMode.Combo) Combo();
+            if (Orbwalker.ActiveMode == LSOrbwalker.OrbwalkingMode.LaneClear) Jungleclear();
+            if (Orbwalker.ActiveMode == LSOrbwalker.OrbwalkingMode.Mixed) Harass();
+            if (Orbwalker.ActiveMode == LSOrbwalker.OrbwalkingMode.Flee) Flee();
             if (Utils.GameTimeTickCount - LastQ >= 3650 && QStack != 1 && !Player.LSIsRecalling() && KeepQ && Q.IsReady()) Q.Cast(EloBuddy.Game.CursorPos);
         }
 
@@ -468,12 +417,11 @@ namespace HoolaRiven
             var targetR = LSTargetSelector.GetTarget(250 + Player.AttackRange + 70, EloBuddy.DamageType.Physical);
             if (targetR != null)
             {
-                if (R.IsReady() && R.Instance.Name == IsFirstR && Orbwalker.InAutoAttackRange(targetR) && AlwaysR && targetR != null) ForceR();
+                if (R.IsReady() && R.Instance.Name == IsFirstR && LSOrbwalker.InAutoAttackRange(targetR) && AlwaysR && targetR != null) ForceR();
                 if (R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && InWRange(targetR) && ComboW && AlwaysR && targetR != null)
                 {
                     ForceR();
                     Utility.DelayAction.Add(1, ForceW);
-                    WReset();
                 }
                 if (W.IsReady() && InWRange(targetR) && ComboW && targetR != null) W.Cast();
                 if (UseHoola && R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && targetR != null && E.IsReady() && targetR.LSIsValidTarget() && !targetR.IsZombie && (IsKillableR(targetR) || AlwaysR))
@@ -483,7 +431,6 @@ namespace HoolaRiven
                         E.Cast(targetR.Position);
                         ForceR();
                         Utility.DelayAction.Add(200, ForceW);
-                        WReset();
                         Utility.DelayAction.Add(305, () => ForceCastQ(targetR));
                     }
                 }
@@ -494,7 +441,6 @@ namespace HoolaRiven
                         E.Cast(targetR.Position);
                         ForceR();
                         Utility.DelayAction.Add(200, ForceW);
-                        WReset();
                     }
                 }
                 else if (UseHoola && W.IsReady() && E.IsReady())
@@ -504,7 +450,6 @@ namespace HoolaRiven
                         E.Cast(targetR.Position);
                         Utility.DelayAction.Add(10, ForceItem);
                         Utility.DelayAction.Add(200, ForceW);
-                        WReset();
                         Utility.DelayAction.Add(305, () => ForceCastQ(targetR));
                     }
                 }
@@ -515,7 +460,6 @@ namespace HoolaRiven
                         E.Cast(targetR.Position);
                         Utility.DelayAction.Add(10, ForceItem);
                         Utility.DelayAction.Add(240, ForceW);
-                        WReset();
                     }
                 }
                 else if (E.IsReady())
@@ -594,7 +538,7 @@ namespace HoolaRiven
                     Utility.DelayAction.Add(1, ForceW);
                 }
             }
-            if (Q.IsReady() && E.IsReady() && QStack == 3 && !Orbwalking.CanAttack() && Orbwalking.CanMove(5))
+            if (Q.IsReady() && E.IsReady() && QStack == 3 && !LSOrbwalker.CanAttack() && Orbwalker.CanMove(5))
             {
                 var epos = Player.ServerPosition +
                           (Player.ServerPosition - target.ServerPosition).LSNormalized() * 300;
@@ -625,27 +569,25 @@ namespace HoolaRiven
             {
                 case "Spell1a":
                     LastQ = Utils.GameTimeTickCount;
-                    if (Qstrange && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None) EloBuddy.Chat.Say("/d");
+                    if (Qstrange && Orbwalker.ActiveMode != LSOrbwalker.OrbwalkingMode.None) EloBuddy.Chat.Say("/d");
                     QStack = 2;
-                    if (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Flee) Utility.DelayAction.Add((QD * 10) + 1, Reset);
+                    if (Orbwalker.ActiveMode != LSOrbwalker.OrbwalkingMode.None && Orbwalker.ActiveMode != LSOrbwalker.OrbwalkingMode.LastHit && Orbwalker.ActiveMode != LSOrbwalker.OrbwalkingMode.Flee) Utility.DelayAction.Add((QD * 10) + 1, Reset);
                     break;
                 case "Spell1b":
                     LastQ = Utils.GameTimeTickCount;
-                    if (Qstrange && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None) EloBuddy.Chat.Say("/d");
+                    if (Qstrange && Orbwalker.ActiveMode != LSOrbwalker.OrbwalkingMode.None) EloBuddy.Chat.Say("/d");
                     QStack = 3;
-                    if (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Flee) Utility.DelayAction.Add((QD * 10) + 1, Reset);
+                    if (Orbwalker.ActiveMode != LSOrbwalker.OrbwalkingMode.None && Orbwalker.ActiveMode != LSOrbwalker.OrbwalkingMode.LastHit && Orbwalker.ActiveMode != LSOrbwalker.OrbwalkingMode.Flee) Utility.DelayAction.Add((QD * 10) + 1, Reset);
                     break;
                 case "Spell1c":
                     LastQ = Utils.GameTimeTickCount;
-                    if (Qstrange && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None) EloBuddy.Chat.Say("/d");
+                    if (Qstrange && Orbwalker.ActiveMode != LSOrbwalker.OrbwalkingMode.None) EloBuddy.Chat.Say("/d");
                     QStack = 1;
-                    if (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Flee) Utility.DelayAction.Add((QLD * 10) + 3, Reset);
+                    if (Orbwalker.ActiveMode != LSOrbwalker.OrbwalkingMode.None && Orbwalker.ActiveMode != LSOrbwalker.OrbwalkingMode.LastHit && Orbwalker.ActiveMode != LSOrbwalker.OrbwalkingMode.Flee) Utility.DelayAction.Add((QLD * 10) + 3, Reset);
                     break;
                 case "Spell3":
-                    if ((Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Burst ||
-                        Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo ||
-                        Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.FastHarass ||
-                        Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Flee) && Youmu) CastYoumoo();
+                    if (( Orbwalker.ActiveMode == LSOrbwalker.OrbwalkingMode.Combo ||
+                        Orbwalker.ActiveMode == LSOrbwalker.OrbwalkingMode.Flee) && Youmu) CastYoumoo();
                     break;
                 case "Spell4a":
                     LastR = Utils.GameTimeTickCount;
@@ -671,13 +613,8 @@ namespace HoolaRiven
         private static void Reset()
         {
             EloBuddy.Chat.Say("/d");
-            Orbwalking.LastAATick = 0;
+            LSOrbwalker.LastAATick = 0;
             EloBuddy.Player.IssueOrder(EloBuddy.GameObjectOrder.MoveTo, Player.Position.LSExtend(EloBuddy.Game.CursorPos, Player.LSDistance(EloBuddy.Game.CursorPos) + 10));
-        }
-        private static void WReset()
-        {
-            Orbwalking.LastAATick = 0;
-            EloBuddy.Player.IssueOrder(EloBuddy.GameObjectOrder.AttackTo, Player.Position.LSExtend(EloBuddy.Game.CursorPos, Player.LSDistance(EloBuddy.Game.CursorPos) + 10));
         }
         private static bool InWRange(EloBuddy.GameObject target) =>(Player.HasBuff("RivenFengShuiEngine") && target != null) ?
                       330 >= Player.LSDistance(target.Position) : 265 >= Player.LSDistance(target.Position);
@@ -728,7 +665,7 @@ namespace HoolaRiven
             if (target != null && target.LSIsValidTarget() && !target.IsZombie)
             {
                 W.Cast();
-                Utility.DelayAction.Add(10, () => Player.Spellbook.CastSpell(Flash, target.Position));
+                Utility.DelayAction.Add(10, () => Player.Spellbook.CastSpell(Player.GetSpellSlot("summonerFlash"), target.Position));
             }
         }
 
@@ -737,7 +674,7 @@ namespace HoolaRiven
         private static void CastYoumoo() { if (ItemData.Youmuus_Ghostblade.GetItem().IsReady()) ItemData.Youmuus_Ghostblade.GetItem().Cast(); }
         private static void OnCasting(EloBuddy.Obj_AI_Base sender, EloBuddy.GameObjectProcessSpellCastEventArgs args)
         {
-            if (sender.IsEnemy && sender.Type == Player.Type && (AutoShield || (Shield && Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LastHit)))
+            if (sender.IsEnemy && sender.Type == Player.Type && (AutoShield || (Shield && Orbwalker.ActiveMode == LSOrbwalker.OrbwalkingMode.LastHit)))
             {
                 var epos = Player.ServerPosition +
                           (Player.ServerPosition - sender.ServerPosition).LSNormalized() * 300;
@@ -750,7 +687,7 @@ namespace HoolaRiven
 
                             if (args.Target.NetworkId == Player.NetworkId)
                             {
-                                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LastHit && !args.SData.Name.Contains("NasusW"))
+                                if (Orbwalker.ActiveMode == LSOrbwalker.OrbwalkingMode.LastHit && !args.SData.Name.Contains("NasusW"))
                                 {
                                     if (E.IsReady()) E.Cast(epos);
                                 }
@@ -759,7 +696,7 @@ namespace HoolaRiven
                             break;
                         case EloBuddy.SpellDataTargetType.SelfAoe:
 
-                            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LastHit)
+                            if (Orbwalker.ActiveMode == LSOrbwalker.OrbwalkingMode.LastHit)
                             {
                                 if (E.IsReady()) E.Cast(epos);
                             }
