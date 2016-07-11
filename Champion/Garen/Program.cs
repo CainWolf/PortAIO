@@ -99,6 +99,11 @@ namespace UnderratedAIO.Champions
                 return;
             }
 
+            if (R.IsInRange(target) && R.IsReady() && target.LSIsValidTarget() && ObjectManager.Player.CalculateDamageOnUnit(target, DamageType.Physical, (float)R.GetDamage(target)) > target.Health)
+            {
+                R.Cast(target);
+            }
+
             var hasIgnite = player.Spellbook.CanUseSpell(player.GetSpellSlot("SummonerDot")) == SpellState.Ready;
             var ignitedmg = (float) player.GetSummonerSpellDamage(target, Damage.SummonerSpell.Ignite);
             if (getCheckBoxItem(comboMenu, "useIgnite") && hasIgnite && ((R.IsReady() && ignitedmg + R.GetDamage(target) > target.Health) || ignitedmg > target.Health) && (target.LSDistance(player) > E.Range || player.HealthPercent < 20))
