@@ -162,7 +162,7 @@
                 }
 
                 var target = Enemies.FirstOrDefault(x => x.LSIsValidTarget(spells[Spells.E].Range));
-                if (target == null)
+                if (target == null || target.IsDead || !target.IsHPBarRendered || !target.IsVisible)
                 {
                     return;
                 }
