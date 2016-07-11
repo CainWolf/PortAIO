@@ -524,7 +524,6 @@
     <Compile Include="Dual-Port\Hoola\Lucian\HpBarIndicator.cs" />
     <Compile Include="Dual-Port\Hoola\Lucian\Program.cs" />
     <Compile Include="Dual-Port\Hoola\Riven\HpBarIndicator.cs" />
-    <Compile Include="Dual-Port\Hoola\Riven\Orbwalking.cs" />
     <Compile Include="Dual-Port\Hoola\Riven\Program.cs" />
     <Compile Include="Dual-Port\imsosharp\ChallengerSeries\Plugins\Vayne.cs" />
     <Compile Include="Dual-Port\Nechrito\Dark Star Thresh\Core\Core.cs" />

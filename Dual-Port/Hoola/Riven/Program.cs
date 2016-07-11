@@ -65,7 +65,7 @@ namespace HoolaRiven
             if (Items.HasItem(3748) && Items.CanUseItem(3748))
             {
                 Items.UseItem(3748);
-                LSOrbwalker.LastAATick = 0;
+                Orbwalker.ResetAutoAttackTimer();
             }
         }
         private static void Drawing_OnEndScene(EventArgs args)
@@ -612,8 +612,8 @@ namespace HoolaRiven
 
         private static void Reset()
         {
+            Orbwalker.ResetAutoAttackTimer();
             EloBuddy.Chat.Say("/d");
-            LSOrbwalker.LastAATick = 0;
             EloBuddy.Player.IssueOrder(EloBuddy.GameObjectOrder.MoveTo, Player.Position.LSExtend(EloBuddy.Game.CursorPos, Player.LSDistance(EloBuddy.Game.CursorPos) + 10));
         }
         private static bool InWRange(EloBuddy.GameObject target) =>(Player.HasBuff("RivenFengShuiEngine") && target != null) ?

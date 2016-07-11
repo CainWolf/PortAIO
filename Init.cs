@@ -29,7 +29,7 @@ namespace PortAIO
 
         private static void Game_OnUpdate(EventArgs args)
         {
-            if (Loader.useOrb || (ObjectManager.Player.ChampionName == "Riven" ? Loader.riven == 3 : false))
+            if (Loader.useOrb)
             {
                 Orbwalker.DisableAttacking = true;
                 Orbwalker.DisableMovement = true;
@@ -77,15 +77,8 @@ namespace PortAIO
 
             if (Loader.useOrb)
             {
-                if (ObjectManager.Player.ChampionName == "Riven" && Loader.riven == 3)
-                {
-                    LSTargetSelector.Initialize();
-                }
-                else
-                {
-                    LSTargetSelector.Initialize();
-                    LSOrbwalker = new LSOrbwalker();
-                }
+                LSTargetSelector.Initialize();
+                LSOrbwalker = new LSOrbwalker();
             }
 
             if (!Loader.champOnly)
