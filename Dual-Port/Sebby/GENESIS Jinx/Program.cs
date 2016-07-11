@@ -36,6 +36,35 @@ namespace Jinx_Genesis
 
         private static List<AIHeroClient> Enemies = new List<AIHeroClient>();
 
+        /// <summary>
+        /// Calculates the Damage done with R - KARMAPANDA
+        /// </summary>
+        /// <param name="target">The Target</param>
+        /// <returns>Returns the Damage done with useR</returns>
+        private static float RDamage(Obj_AI_Base target)
+        {
+            var distance = ObjectManager.Player.Distance(target);
+            var increment = Math.Floor(distance / 100f);
+
+            if (increment > 15)
+            {
+                increment = 15;
+            }
+
+            var extraPercent = Math.Floor((10f + (increment * 6f))) / 10f;
+
+            if (extraPercent > 10)
+            {
+                extraPercent = 10;
+            }
+
+            var damage = (new[] { 0f, 25f, 35f, 45f }[R.Level] * (extraPercent)) +
+                         ((extraPercent / 100f) * ObjectManager.Player.FlatPhysicalDamageMod) +
+                         ((new[] { 0f, 0.25f, 0.3f, 0.35f }[R.Level] * (target.MaxHealth - target.Health)));
+
+            return ObjectManager.Player.CalculateDamageOnUnit(target, DamageType.Physical, (float)damage);
+        }
+
         public static void Game_OnGameLoad()
         {
             if (Player.ChampionName != ChampionName) return;
@@ -295,7 +324,7 @@ namespace Jinx_Genesis
                     
                     float predictedHealth = target.Health + target.HPRegenRate * 2;
 
-                    var Rdmg = R.GetDamage(target, 1);
+                    var Rdmg = RDamage(target);
                     if(Player.LSDistance(target.Position) < 1500)
                     {
 

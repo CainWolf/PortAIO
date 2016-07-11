@@ -230,6 +230,35 @@ namespace OneKeyToWin_AIO_Sebby
             }
         }
 
+        /// <summary>
+        /// Calculates the Damage done with R - KARMAPANDA
+        /// </summary>
+        /// <param name="target">The Target</param>
+        /// <returns>Returns the Damage done with useR</returns>
+        private static float RDamage(Obj_AI_Base target)
+        {
+            var distance = ObjectManager.Player.Distance(target);
+            var increment = Math.Floor(distance / 100f);
+
+            if (increment > 15)
+            {
+                increment = 15;
+            }
+
+            var extraPercent = Math.Floor((10f + (increment * 6f))) / 10f;
+
+            if (extraPercent > 10)
+            {
+                extraPercent = 10;
+            }
+
+            var damage = (new[] { 0f, 25f, 35f, 45f }[Program.R.Level] * (extraPercent)) +
+                         ((extraPercent / 100f) * ObjectManager.Player.FlatPhysicalDamageMod) +
+                         ((new[] { 0f, 0.25f, 0.3f, 0.35f }[Program.R.Level] * (target.MaxHealth - target.Health)));
+
+            return ObjectManager.Player.CalculateDamageOnUnit(target, DamageType.Physical, (float)damage);
+        }
+
         private void LogicW()
         {
             var t = TargetSelector.GetTarget(W.Range, DamageType.Physical);
@@ -241,7 +270,7 @@ namespace OneKeyToWin_AIO_Sebby
                     var comboDmg = OktwCommon.GetKsDamage(enemy, W);
                     if (R.IsReady() && Player.Mana > RMANA + WMANA + 20)
                     {
-                        comboDmg += R.GetDamage(enemy, 1);
+                        comboDmg += RDamage(enemy);
                     }
                     if (comboDmg > enemy.Health && OktwCommon.ValidUlt(enemy))
                     {
@@ -335,7 +364,7 @@ namespace OneKeyToWin_AIO_Sebby
                         return;
                     }
                     var predictedHealth = target.Health - OktwCommon.GetIncomingDamage(target);
-                    var Rdmg = R.GetDamage(target, 1);
+                    var Rdmg = RDamage(target);
 
                     if (Rdmg > predictedHealth && !OktwCommon.IsSpellHeroCollision(target, R) && GetRealDistance(target) > bonusRange() + 200)
                     {
@@ -550,7 +579,7 @@ namespace OneKeyToWin_AIO_Sebby
             {
                 var t = TargetSelector.GetTarget(R.Range, DamageType.Physical);
 
-                if (R.IsReady() && t.LSIsValidTarget() && R.GetDamage(t, 1) > t.Health)
+                if (R.IsReady() && t.LSIsValidTarget() && RDamage(t) > t.Health)
                 {
                     Drawing.DrawText(Drawing.Width * 0.1f, Drawing.Height * 0.5f, System.Drawing.Color.Red, "Ult can kill: " + t.ChampionName + " have: " + t.Health + "hp");
                     drawLine(t.Position, Player.Position, 5, System.Drawing.Color.Red);

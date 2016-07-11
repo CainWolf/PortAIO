@@ -11,6 +11,7 @@ using SebbyLib;
 using Orbwalking = SebbyLib.Orbwalking;
 using Spell = LeagueSharp.Common.Spell;
 using Utility = LeagueSharp.Common.Utility;
+using SharpDX;
 
 namespace OneKeyToWin_AIO_Sebby
 {
@@ -205,7 +206,7 @@ namespace OneKeyToWin_AIO_Sebby
                 else
                 {
                     var qDmg = OktwCommon.GetKsDamage(t, Q);
-                    var rDmg = R.GetDamage(t);
+                    var rDmg = GetRDamage(t);
                     if (qDmg > t.Health)
                     {
                         Q.Cast(t, true);
@@ -237,6 +238,43 @@ namespace OneKeyToWin_AIO_Sebby
                 if (Qfarm.MinionsHit > 2)
                     Q.Cast(Qfarm.Position);
             }
+        }
+
+        // Counts the number of enemy objects in front of the player from the local player.
+        internal static int Proj2(Vector3 endpos, float width, float range, bool minion = false)
+        {
+            var end = endpos.To2D();
+            var start = Player.ServerPosition.To2D();
+            var direction = (end - start).Normalized();
+            var endposition = start + direction * start.Distance(endpos);
+
+            return (from unit in ObjectManager.Get<Obj_AI_Base>().Where(b => b.Team != Player.Team)
+                    where Player.ServerPosition.Distance(unit.ServerPosition) <= range
+                    where unit is AIHeroClient || unit is Obj_AI_Minion && minion
+                    let proj = unit.ServerPosition.To2D().ProjectOn(start, endposition)
+                    let projdist = unit.Distance(proj.SegmentPoint)
+                    where unit.BoundingRadius + width > projdist
+                    select unit).Count();
+        }
+
+        internal static float GetRDamage(AIHeroClient target)
+        {
+            if (target == null)
+                return 0f;
+
+            // impact physical damage
+            var irdmg = R.IsReady() && Proj2(target.ServerPosition, R.Width, R.Range) <= 1
+                ? (float)Player.CalcDamage(target, DamageType.Physical,
+                    new double[] { 250, 400, 550 }[R.Level - 1] + 1.5 * Player.FlatPhysicalDamageMod)
+                : 0;
+
+            // explosion damage
+            var erdmg = R.IsReady() && Proj2(target.ServerPosition, R.Width, R.Range) > 1
+                ? (float)Player.CalcDamage(target, DamageType.Physical,
+                    new double[] { 200, 320, 440 }[R.Level - 1] + 1.2 * Player.FlatPhysicalDamageMod)
+                : 0;
+
+            return irdmg + erdmg;
         }
 
         private static void LogicW()
@@ -360,40 +398,40 @@ namespace OneKeyToWin_AIO_Sebby
                 if (getCheckBoxItem(drawMenu, "onlyRdy"))
                 {
                     if (Q.IsReady())
-                        Utility.DrawCircle(ObjectManager.Player.Position, Q.Range, Color.Cyan, 1, 1);
+                        Utility.DrawCircle(ObjectManager.Player.Position, Q.Range, System.Drawing.Color.Cyan, 1, 1);
                 }
                 else
-                    Utility.DrawCircle(ObjectManager.Player.Position, Q.Range, Color.Cyan, 1, 1);
+                    Utility.DrawCircle(ObjectManager.Player.Position, Q.Range, System.Drawing.Color.Cyan, 1, 1);
             }
             if (getCheckBoxItem(drawMenu, "wRange"))
             {
                 if (getCheckBoxItem(drawMenu, "onlyRdy"))
                 {
                     if (W.IsReady())
-                        Utility.DrawCircle(ObjectManager.Player.Position, W.Range, Color.Orange, 1, 1);
+                        Utility.DrawCircle(ObjectManager.Player.Position, W.Range, System.Drawing.Color.Orange, 1, 1);
                 }
                 else
-                    Utility.DrawCircle(ObjectManager.Player.Position, W.Range, Color.Orange, 1, 1);
+                    Utility.DrawCircle(ObjectManager.Player.Position, W.Range, System.Drawing.Color.Orange, 1, 1);
             }
             if (getCheckBoxItem(drawMenu, "eRange"))
             {
                 if (getCheckBoxItem(drawMenu, "onlyRdy"))
                 {
                     if (E.IsReady())
-                        Utility.DrawCircle(ObjectManager.Player.Position, E.Range, Color.Yellow, 1, 1);
+                        Utility.DrawCircle(ObjectManager.Player.Position, E.Range, System.Drawing.Color.Yellow, 1, 1);
                 }
                 else
-                    Utility.DrawCircle(ObjectManager.Player.Position, E.Range, Color.Yellow, 1, 1);
+                    Utility.DrawCircle(ObjectManager.Player.Position, E.Range, System.Drawing.Color.Yellow, 1, 1);
             }
             if (getCheckBoxItem(drawMenu, "rRange"))
             {
                 if (getCheckBoxItem(drawMenu, "onlyRdy"))
                 {
                     if (R.IsReady())
-                        Utility.DrawCircle(ObjectManager.Player.Position, R.Range, Color.Gray, 1, 1);
+                        Utility.DrawCircle(ObjectManager.Player.Position, R.Range, System.Drawing.Color.Gray, 1, 1);
                 }
                 else
-                    Utility.DrawCircle(ObjectManager.Player.Position, R.Range, Color.Gray, 1, 1);
+                    Utility.DrawCircle(ObjectManager.Player.Position, R.Range, System.Drawing.Color.Gray, 1, 1);
             }
         }
     }
