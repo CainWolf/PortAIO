@@ -114,6 +114,15 @@ namespace UnderratedAIO.Champions
             R.SetSkillshot(1f, 100, float.MaxValue, false, SkillshotType.SkillshotCircle);
         }
 
+        private static void CleanserManager()
+        {
+            // List of disable buffs
+            if (W.IsReady() && ((Player.HasBuffOfType(BuffType.Charm)) || (Player.HasBuffOfType(BuffType.Flee)) || (Player.HasBuffOfType(BuffType.Polymorph)) || (Player.HasBuffOfType(BuffType.Snare)) || (Player.HasBuffOfType(BuffType.Stun)) || (Player.HasBuffOfType(BuffType.Taunt)) || (Player.HasBuff("summonerexhaust")) || (Player.HasBuffOfType(BuffType.Suppression))))
+            {
+                LeagueSharp.Common.Utility.DelayAction.Add(100, () => { W.Cast(); });
+            }
+        }
+
         private void Game_OnGameUpdate(EventArgs args)
         {
             var barrels =
@@ -155,7 +164,12 @@ namespace UnderratedAIO.Champions
                     Lasthit();
                 }
             }
-            
+
+            if (menuM["AutoW"].Cast<CheckBox>().CurrentValue)
+            {
+                CleanserManager();
+            }
+
             if (menuM["AutoR"].Cast<CheckBox>().CurrentValue && R.IsReady())
             {
                 foreach (var enemy in
